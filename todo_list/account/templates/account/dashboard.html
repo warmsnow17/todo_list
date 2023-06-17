@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>Список задач</h1>
+<ul style="margin-bottom: 20px;">
+{% for task in tasks %}
+    <li style="margin-bottom: 10px;">
+        <div class="task" style="background: {{ task.completed|yesno:"#81ce81,#faffae" }}; padding: 10px; border-radius: 5px;">
+            <div>
+                {% if not task.completed %}
+                    <a href="{% url 'task_complete' task.id %}">Отметить как выполненное</a> -
+                {% else %}
+                    <span style="color: green;">Выполнено - </span>
+                {% endif %}
+                {{ task.title }}
+            </div>
+            <div class="task-description">
+                {{ task.description }}
+            </div>
+            <form action="{% url 'task_delete' task.id %}" method="POST" style="display: inline;">
+                {% csrf_token %}
+                <input type="submit" value="Удалить" style="color: red; border: none; background: none; cursor: pointer; font-weight: normal;">
+            </form>
+        </div>
+    </li>
+{% empty %}
+    <li>Нет задач.</li>
+{% endfor %}
+
+</ul>
+<form method="post">
+    {{ form.as_p }}
+    {% csrf_token %}
+    <input type="submit" value="Создать новую задачу">
+</form>
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<p>
+    Добро пожаловать в панель управления. Ты можешь вносить новые задачи, <a href="{% url "edit" %}">редактировать профиль</a> или <a href="{% url "password_change" %}">изменить свой пароль</a>.
+</p>
+{% endblock %}
