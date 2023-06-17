@@ -1,7 +1,8 @@
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from api import api
-from states import RegisterForm, CreateTaskForm
+from states import RegisterForm, CreateTaskForm, UserRegistered
 
 
 async def start(message: types.Message, state: FSMContext):
@@ -11,6 +12,7 @@ async def start(message: types.Message, state: FSMContext):
         await message.answer('Для начала работы с ботом зарегистрируйтесь на сайте. Пожалуйста, придумайте и напишите ваш логин.')
         await state.set_state(RegisterForm.login)
     else:
+        await state.set_state(UserRegistered.user_registered)
         await message.answer(f'Добро пожаловать! Вы можете создать задачу с помощью команды /create '
                              f'и просмотреть свои задачи с помощью команды /tasks')
 
@@ -39,8 +41,12 @@ async def process_password(message: types.Message, state: FSMContext):
 
 
 async def create_task(message: types.Message, state: FSMContext):
-    await message.answer('Введите название задачи')
-    await state.set_state(CreateTaskForm.title)
+    current_state = await state.get_state()
+    if current_state != UserRegistered.user_registered.state:
+        await message.answer('Для создания задач, введите команду /start и зарегистрируйтесь.')
+    else:
+        await message.answer('Введите название задачи')
+        await state.set_state(CreateTaskForm.title)
 
 
 async def process_task_title(message: types.Message, state: FSMContext):
@@ -62,12 +68,16 @@ async def process_task_description(message: types.Message, state: FSMContext):
     await state.finish()
 
 
-async def view_tasks(message: types.Message):
-    telegram_id = message.from_user.id
-    tasks = await api.get_tasks(telegram_id)
-    if tasks:
-        for task in tasks:
-            status = "Выполнено" if task['completed'] else "Не выполнено"
-            await message.answer(f"Задача: {task['title']}\nОписание: {task['description']}\nСтатус: {status}")
+async def view_tasks(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state != UserRegistered.user_registered.state:
+        await message.answer('Для просмотра задач, введите команду /start и зарегистрируйтесь.')
     else:
-        await message.answer("У вас пока нет задач.")
+        telegram_id = message.from_user.id
+        tasks = await api.get_tasks(telegram_id)
+        if tasks:
+            for task in tasks:
+                status = "Выполнено" if task['completed'] else "Не выполнено"
+                await message.answer(f"Задача: {task['title']}\nОписание: {task['description']}\nСтатус: {status}")
+        else:
+            await message.answer("У вас пока нет задач.")

@@ -1,6 +1,4 @@
-from loguru import logger
 from rest_framework import serializers
-
 from account.models import Profile, Task
 from django.contrib.auth.models import User
 
@@ -43,4 +41,3 @@ class TaskListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ['title', 'description', 'completed']
-        logger.warning('Serializer')
